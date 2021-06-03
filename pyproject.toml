@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "q4_majorshortsqueezes"
+version = "0.1.0"
+description = "Using this repo we try to answer the question how many major short squeezes have happened in the US stock market."
+authors = ["Jyzaya <JyzayaEU@gmail.com>"]
+license = "MIT license"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
