@@ -1,8 +1,12 @@
 # How to run tests?
-Follow the setup in the `README.md` and
-use the following commands to run tests:
+Follow the setup in the `README.md` and use the following commands to run all tests:
 ```
 poetry run python -m pytest test/
+```
+
+To only run unit tests use the following command:
+```
+poetry run python -m pytest -m "not integration_test" test/
 ```
 
 # Dependency management
