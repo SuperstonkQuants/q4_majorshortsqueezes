@@ -1,7 +1,7 @@
 import pandas as pd
 import yfinance as yf
 
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 """
 A Panda's data frame with columns:
@@ -30,20 +30,17 @@ class TickerContainer:
         return self.__stored_tickers
 
 
-def load_ticker_history(ticker: str, start_date: str) -> TickerHistory:
+def load_ticker_history(ticker: str, start_date: Optional[str]) -> TickerHistory:
     """Loads a ticker data from Yahoo Finance, adds a data index column data_id and Open-Close High/Low columns.
-
-    This code was taken from:
-    https://github.com/GamestonkTerminal/GamestonkTerminal/blob/main/gamestonk_terminal/technical_analysis/trendline_api.py#L9
 
     Args:
         ticker: The stock ticker.
         start_date: Start date to load stock ticker data formatted YYYY-MM-DD.
+                    If `None` is given the max date range will be used.
 
     Returns:
         A Panda's data frame with columns Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low.
     """
-    # print(f"Start date: {start_date}")
     df_data = yf.download(ticker, start=start_date, progress=False)
 
     df_data["date_id"] = (df_data.index.date - df_data.index.date.min()).astype(

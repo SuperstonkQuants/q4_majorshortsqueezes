@@ -60,9 +60,15 @@ poetry install
 This is a library for package management, and ensures a smoother experience than: ``pip install -r requirements.txt``
 
 8.  You are ready to interact with the package.
-    The following pulls GME, AMC and TSLA and filters returns the tickers
-    that have doubled in value within 5 consecutive days in 2021:
+    The following pulls GME, AMC and TSLA and returns only the tickers
+    that have doubled in value within 5 consecutive days in 2021.
+    The historical price data of the returned tickers is written to the `./ticker_data` dir.
 
 ```
-poetry run python -c "from q4_majorshortsqueezes.api.pull_data import main; main(["GME", "AMC", "TSLA"], "2020-01-01", ["q4_majorshortsqueezes.filter/double_price_within_a_week"])"
+poetry run python bin/pull_data.py --tickers GME AMC TSLA --start-date "2020-01-01" --filters "q4_majorshortsqueezes.filter/double_price_within_a_week" --output-path ./ticker_data
+```
+
+For help messages use the `-h` option:
+```
+poetry run python bin/pull_data.py -h
 ```
