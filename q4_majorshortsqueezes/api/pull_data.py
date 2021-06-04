@@ -5,13 +5,14 @@ from q4_majorshortsqueezes.ticker import load_ticker_history, TickerContainer, T
 from typing import Callable, Dict, List, Optional
 
 
-def main(tickers: Optional[List[str]], start_date: str, criterion_paths: List[str]) \
+def main(tickers: Optional[List[str]], start_date: Optional[str], criterion_paths: List[str]) \
         -> Dict[str, TickerHistory]:
     """Pull data for all given tickers and return the ones that satisfy all filter criteria.
 
     Args:
         tickers: A list of tickers, e.g, ["GME", "AMC", "SPY"].
         start_date: The start date in the form YYYY-MM-DD.
+                    If `None` is given the max date range will be used.
         criterion_paths: Python paths to python functions which each adhere to the
                          this interface: `List[Callable[[TickerHistory], bool]`.
                          The path format for a criterion function is:
