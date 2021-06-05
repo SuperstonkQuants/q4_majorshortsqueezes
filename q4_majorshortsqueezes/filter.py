@@ -1,8 +1,9 @@
-import functools
+import json
 import logging
+from functools import partial
 from typing import Any, Callable, Generic, List, TypeVar
 
-from q4_majorshortsqueezes.ticker import TickerHistory
+from q4_majorshortsqueezes.ticker import Ticker
 
 
 T = TypeVar('T')
@@ -92,13 +93,14 @@ class SortedFIFOCache(Generic[T]):
         return next(iter(self._sorted_values), None)
 
 
-def multiply_price_within_x_days(ticker_history: TickerHistory, multiplier: int, days: int) -> bool:
+def multiply_price_within_x_days(ticker: Ticker,
+                                 multiplier: int, days: int) -> bool:
     """Check whether the price of the ticker has ever increased by a multiplier within consecutive days.
 
     The function used the highs (`High` attribute) and lows (`Low` attribute) of each day.
 
     Args:
-        ticker_history: The ticker history data.
+        ticker: Ticker data object.
         multiplier: How much multiplicative increase do we expect between the ticker's low and high
                     prices during any consecutive days.
         days: The amount of days in which the increase must be observed.
@@ -109,19 +111,20 @@ def multiply_price_within_x_days(ticker_history: TickerHistory, multiplier: int,
         True, if the ticket multiplied by `multiplier` within the given consecutive `days`;
         Otherwise, returns false.
     """
-    cache_lows = SortedFIFOCache(size=days,
-                                 sort_key_func=lambda x: x)
-    cache_highs = SortedFIFOCache(size=days,
-                                  sort_key_func=lambda x: -x)  # inverse to sort desc
+    cache_adj_close = SortedFIFOCache(size=days, sort_key_func=lambda x: x)
 
-    for low, high in zip(ticker_history['Low'], ticker_history['High']):
-        cache_lows.add(low)
-        cache_highs.add(high)
+    for adj_close, date in zip(ticker.history['Adj Close'], ticker.history['Date']):
+        # At first there are no values cached:
+        if cache_adj_close.get_first():
+            increase = adj_close / cache_adj_close.get_first()
+            if increase >= multiplier:
+                info_json = json.dumps({"Ticker": ticker.symbol, "Date": date,
+                                        "Adj Close": adj_close, "Increase": increase})
+                logging.info("%s - satisfied filter `%s(multiplier=%s, days=%s)`.",
+                             info_json, multiply_price_within_x_days.__name__, multiplier, days)
+                return True
 
-        if cache_lows.get_first() * multiplier <= cache_highs.get_first():
-            logging.info("Satisfied filter: %s(multiplier=%s, days=%s)",
-                         multiply_price_within_x_days.__name__, multiplier, days)
-            return True
+        cache_adj_close.add(adj_close)
 
     logging.info("Failed filter: %s(multiplier=%s, days=%s)",
                  multiply_price_within_x_days.__name__, multiplier, days)
@@ -129,8 +132,14 @@ def multiply_price_within_x_days(ticker_history: TickerHistory, multiplier: int,
 
 
 """
-The following filter implements the requested short squeeze filter:
+The following filters implement the requested short squeeze filter:
 `definition of a major short squeeze is when a stock doubles in price (or more) within one week`.
-This function is compliant with the criterion interface of `ticker.InMemoryTickerContainer.`
+This function is compliant with the criterion interface of `ticker.TicketContainer.`
 """
-double_price_within_a_week = functools.partial(multiply_price_within_x_days, multiplier=2, days=5)
+price_multi_2_within_5_days = partial(multiply_price_within_x_days, multiplier=2, days=5)
+price_multi_2_within_10_days = partial(multiply_price_within_x_days, multiplier=2, days=10)
+price_multi_3_within_5_days = partial(multiply_price_within_x_days, multiplier=3, days=5)
+price_multi_3_within_10_days = partial(multiply_price_within_x_days, multiplier=3, days=10)
+price_multi_5_within_5_days = partial(multiply_price_within_x_days, multiplier=5, days=5)
+price_multi_5_within_10_days = partial(multiply_price_within_x_days, multiplier=5, days=10)
+double_price_within_a_week = price_multi_2_within_5_days  # More readable name for the README.md

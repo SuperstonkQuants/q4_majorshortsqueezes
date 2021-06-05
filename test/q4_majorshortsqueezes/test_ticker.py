@@ -9,6 +9,7 @@ from q4_majorshortsqueezes.ticker import (
     load_ticker_history_from_csv,
     retrieve_tickers_with_get_all_tickers_package,
     InMemoryTickerContainer,
+    Ticker,
     TickerHistory,
 )
 
@@ -16,33 +17,28 @@ from q4_majorshortsqueezes.ticker import (
 class TestInMemoryTickerContainer:
     def test_add_with_single_criterion(self):
         container = InMemoryTickerContainer()
-        ticker_history1 = MagicMock(spec=TickerHistory)
-        ticker_history1.__len__.side_effect = lambda: 10
-        ticker_history2 = MagicMock(spec=TickerHistory)
-        ticker_history2.__len__.side_effect = lambda: 0
+        ticker1 = Ticker("GME", MagicMock(spec=TickerHistory))
+        ticker2 = Ticker("AMC", MagicMock(spec=TickerHistory))
 
-        container.add_criterion(lambda th: len(th) > 0)
-        container.store_ticker("A", ticker_history1)
-        container.store_ticker("B", ticker_history2)
+        container.add_criterion(lambda t: "GM" in t.symbol)
+        container.store_ticker(ticker1.symbol, ticker1.history)
+        container.store_ticker(ticker2.symbol, ticker2.history)
 
-        assert container.get_data() == {"A": ticker_history1}
+        assert container.get_data() == {ticker1.symbol: ticker1.history}
 
     def test_add_with_multiple_criteria(self):
         container = InMemoryTickerContainer()
-        ticker_history1 = MagicMock(spec=TickerHistory)
-        ticker_history1.__len__.side_effect = lambda: 10
-        ticker_history2 = MagicMock(spec=TickerHistory)
-        ticker_history2.__len__.side_effect = lambda: 5
-        ticker_history3 = MagicMock(spec=TickerHistory)
-        ticker_history3.__len__.side_effect = lambda: 0
+        ticker1 = Ticker("GME", MagicMock(spec=TickerHistory))
+        ticker2 = Ticker("AMC", MagicMock(spec=TickerHistory))
+        ticker3 = Ticker("TSLA", MagicMock(spec=TickerHistory))
 
-        container.add_criterion(lambda th: len(th) > 0)
-        container.add_criterion(lambda th: len(th) < 10)
-        container.store_ticker("A", ticker_history1)
-        container.store_ticker("B", ticker_history2)
-        container.store_ticker("C", ticker_history3)
+        container.add_criterion(lambda t: "M" in t.symbol)
+        container.add_criterion(lambda t: "G" in t.symbol)
+        container.store_ticker(ticker1.symbol, ticker1.history)
+        container.store_ticker(ticker2.symbol, ticker2.history)
+        container.store_ticker(ticker3.symbol, ticker3.history)
 
-        assert container.get_data() == {"B": ticker_history2}
+        assert container.get_data() == {ticker1.symbol: ticker1.history}
 
 
 class TestFileBackedTicketContainer:

@@ -5,7 +5,6 @@ from q4_majorshortsqueezes.ticker import (
     FileBackedTicketContainer,
     InMemoryTickerContainer,
     load_ticker_history,
-    load_ticker_history_from_csv,
     TickerContainer,
     TickerHistory,
 )
@@ -25,7 +24,7 @@ def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str
                     This has only effect on newly downloaded price data.
                     If `None` is given the max date range will be used.
         criterion_paths: Python paths to python functions which each adhere to the
-                         this interface: `List[Callable[[TickerHistory], bool]`.
+                         this interface: `List[Callable[[Ticker], bool]`.
                          The path format for a criterion function is:
                          `full.qualified.path.to.module/func_name`
         csv_dir_path: A directory path which is looked through for ticker data.
