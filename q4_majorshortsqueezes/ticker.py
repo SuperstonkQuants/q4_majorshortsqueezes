@@ -3,6 +3,7 @@ import glob
 import os
 import pandas as pd
 import yfinance as yf
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 
@@ -16,17 +17,24 @@ Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low
 TickerHistory = pd.DataFrame
 
 
+@dataclass
+class Ticker:
+    symbol: str
+    history: TickerHistory
+
+
 class TickerContainer(abc.ABC):
     """Base class for containers that store historical ticker data."""
     def __init__(self):
-        self._criteria: List[Callable[[TickerHistory], bool]] = []
+        self._criteria: List[Callable[[Ticker], bool]] = []
 
-    def add_criterion(self, criterion: Callable[[TickerHistory], bool]):
+    def add_criterion(self, criterion: Callable[[Ticker], bool]):
         self._criteria.append(criterion)
 
-    def store_ticker(self, ticker: str, ticker_history: TickerHistory):
-        if all(criterion(ticker_history) for criterion in self._criteria):
-            self._add_ticker_data(ticker, ticker_history)
+    def store_ticker(self, symbol: str, ticker_history: TickerHistory):
+        ticker = Ticker(symbol, ticker_history)
+        if all(criterion(ticker) for criterion in self._criteria):
+            self._add_ticker_data(symbol, ticker_history)
 
     @abc.abstractmethod
     def _add_ticker_data(self, ticker: str, ticker_history: TickerHistory):

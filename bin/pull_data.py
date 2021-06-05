@@ -49,7 +49,7 @@ def create_arg_parser():
                              "This has only effect on newly downloaded tickers (,not csv loaded).")
     parser.add_argument("--filters", nargs='+', default=[],
                         help="A list of Python paths to python functions which each adhere to the "
-                             "this interface: `List[Callable[[TickerHistory], bool]`.\n"
+                             "this interface: `List[Callable[[Ticker], bool]`.\n"
                              "The path format for a criterion function is: "
                              "`full.qualified.path.to.module/func_name`.\n\n"
                              "Predefined filters are available under: "
