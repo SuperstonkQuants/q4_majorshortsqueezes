@@ -1,19 +1,21 @@
 import importlib
 import logging
-import os
 
 from q4_majorshortsqueezes.ticker import (
+    FileBackedTicketContainer,
+    InMemoryTickerContainer,
     load_ticker_history,
     load_ticker_history_from_csv,
     TickerContainer,
     TickerHistory,
 )
 
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, List, Optional, Set
 
 
 def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str],
-         csv_dir_path: Optional[str] = None) -> Dict[str, TickerHistory]:
+         csv_dir_path: Optional[str] = None, csv_output_dir_path: Optional[str] = None) \
+        -> TickerContainer:
     """Pull data for all given tickers and return the ones that satisfy all filter criteria.
 
     Args:
@@ -31,23 +33,32 @@ def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str
                       a file named `GME.csv` to load the data from there.
                       If no file is found or this parameter is `None`, the ticker
                       data is downloaded.
+        csv_output_dir_path: A directory path which ticker data is stored to.
+                             This can be the same dir as `csv_dir_path`. Keep in mind
+                             that filtering will not work in this case, since this function
+                             does not delete the input files from `csv_dir_path`.
+                             If this parameter is set, the function returns a
+                             FileBackedTicketContainer, instead of a InMemoryTickerContainer.
 
     Returns:
         A mapping of tickers and their historical data if they satisfied all filter criteria.
     """
-    container = TickerContainer()
+    container = (FileBackedTicketContainer(csv_output_dir_path) if csv_output_dir_path
+                 else InMemoryTickerContainer())
     for criterion in import_criterion_functions(criterion_paths):
         container.add_criterion(criterion)
+
+    read_container = FileBackedTicketContainer(csv_dir_path) if csv_dir_path else None
 
     for i, ticker in enumerate(sorted(tickers), start=1):
         try:
             ticker_history = None
 
-            if csv_dir_path:
-                ticker_file_path = os.path.join(csv_dir_path, f"{ticker}.csv")
-                if os.path.isfile(ticker_file_path):
-                    logging.info("%s. Reading `%s` from %s", i, ticker, ticker_file_path)
-                    ticker_history = load_ticker_history_from_csv(ticker_file_path)
+            if read_container:
+                logging.info("%s. Looking up `%s` from %s", i, ticker, csv_dir_path)
+                ticker_history = read_container[ticker]
+                if ticker_history is None:
+                    logging.info("%s. Failed to look up `%s` from %s", i, ticker, csv_dir_path)
 
             if ticker_history is None:
                 logging.info("%s. Downloading: `%s`", i, ticker)
@@ -59,7 +70,7 @@ def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str
             # Swallow all errors and let users check the logs to see what has failed
             logging.exception("%s. Ticker `%s` failed.", i, ticker)
 
-    return container.get_stored_tickers()
+    return container
 
 
 def import_criterion_functions(criterion_paths: List[str]) -> List[Callable[[TickerHistory], bool]]:

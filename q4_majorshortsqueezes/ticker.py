@@ -1,6 +1,9 @@
-import enum
+import abc
+import glob
+import os
 import pandas as pd
 import yfinance as yf
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 
 from q4_majorshortsqueezes import get_tickers_fixed as gt
@@ -13,24 +16,98 @@ Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low
 TickerHistory = pd.DataFrame
 
 
-class TickerContainer:
-    """A container to store historical ticker data.
-
-    The container only store tickers that meet all of the added criteria.
-    """
-    def __init__(self, ):
+class TickerContainer(abc.ABC):
+    """Base class for containers that store historical ticker data."""
+    def __init__(self):
         self._criteria: List[Callable[[TickerHistory], bool]] = []
-        self.__stored_tickers: Dict[str, TickerHistory] = {}
 
     def add_criterion(self, criterion: Callable[[TickerHistory], bool]):
         self._criteria.append(criterion)
 
     def store_ticker(self, ticker: str, ticker_history: TickerHistory):
         if all(criterion(ticker_history) for criterion in self._criteria):
-            self.__stored_tickers[ticker] = ticker_history
+            self._add_ticker_data(ticker, ticker_history)
 
-    def get_stored_tickers(self) -> Dict[str, TickerHistory]:
+    @abc.abstractmethod
+    def _add_ticker_data(self, ticker: str, ticker_history: TickerHistory):
+        pass
+
+    @abc.abstractmethod
+    def __getitem__(self, ticker: str) -> Optional[TickerHistory]:
+        """Return the ticker price history for a ticker.
+
+        Args:
+            ticker: A ticker symbol.
+
+        Returns:
+            The ticker's price history. If the ticker is not stored in the container, return `None`.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_data(self) -> Dict[str, TickerHistory]:
+        pass
+
+    @abc.abstractmethod
+    def get_tickers(self) -> List[str]:
+        pass
+
+
+class InMemoryTickerContainer(TickerContainer):
+    """A container to store historical ticker data.
+
+    The container only store tickers that meet all of the added criteria.
+    """
+    def __init__(self):
+        super().__init__()
+        self.__stored_tickers: Dict[str, TickerHistory] = {}
+
+    def _add_ticker_data(self, ticker: str, ticker_history: TickerHistory):
+        self.__stored_tickers[ticker] = ticker_history
+
+    def __getitem__(self, ticker) -> Optional[TickerHistory]:
+        return self.__stored_tickers.get(ticker, None)
+
+    def get_data(self) -> Dict[str, TickerHistory]:
         return self.__stored_tickers
+
+    def get_tickers(self) -> List[str]:
+        return sorted(list(self.__stored_tickers.keys()))
+
+
+class FileBackedTicketContainer(TickerContainer):
+    """A ticket container that does not keep the data in memory but on the file system.
+
+    If ticker data is already present, it will also have access to them.
+    """
+    def __init__(self, ticker_data_dir_path: str):
+        super().__init__()
+        self.ticker_data_dir_path = ticker_data_dir_path
+
+    def _add_ticker_data(self, ticker: str, ticker_history: TickerHistory):
+        with open(self._ticker_data_path(ticker), mode="w") as fd:
+            ticker_history.to_csv(fd)
+
+    def _ticker_data_path(self, ticker):
+        return os.path.join(self.ticker_data_dir_path, f"{ticker}.csv")
+
+    def __getitem__(self, ticker) -> Optional[TickerHistory]:
+        if ticker not in self.get_tickers():
+            return None
+        else:
+            return load_ticker_history_from_csv(self._ticker_data_path(ticker))
+
+    def get_data(self) -> Dict[str, TickerHistory]:
+        tickers = self.get_tickers()
+        data = {}
+        for ticker in tickers:
+            data[ticker] = self[ticker]
+
+        return data
+
+    def get_tickers(self) -> List[str]:
+        file_pattern = os.path.join(self.ticker_data_dir_path, "*.csv")
+        return sorted(Path(path).stem for path in glob.glob(file_pattern))
 
 
 def load_ticker_history(ticker: str, start_date: Optional[str]) -> TickerHistory:
