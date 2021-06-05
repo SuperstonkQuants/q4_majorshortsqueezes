@@ -1,7 +1,10 @@
+import enum
 import pandas as pd
 import yfinance as yf
+from typing import Callable, Dict, List, Optional, Set
 
-from typing import Callable, Dict, List, Optional
+from q4_majorshortsqueezes import get_tickers_fixed as gt
+
 
 """
 A Panda's data frame with columns:
@@ -52,3 +55,32 @@ def load_ticker_history(ticker: str, start_date: Optional[str]) -> TickerHistory
     df_data["OC_Low"] = df_data[["Open", "Close"]].min(axis=1)
 
     return df_data
+
+
+def load_ticker_history_from_csv(file_path: str) -> TickerHistory:
+    """Load a tickers historical price data from the given csv.
+
+    Attention:
+    The loaded dataframes are not fully identical with the ones downloaded.
+    When loaded from csv a new column `date` exists which is stored in the data series as
+    tuples when loading the data from `yfinance`.
+
+    Args:
+        file_path: The path to the comma-separated csv file that contains the historical price data.
+
+    Returns:
+        A Panda's data frame with columns Date, Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low.
+    """
+    # TODO: Make the format identical with `yfinance` loading
+    return pd.read_csv(file_path)
+
+
+def retrieve_tickers_with_get_all_tickers_package(nyse: bool = False,
+                                                  nasdaq: bool = False,
+                                                  amex: bool = False,
+                                                  min_market_cap: int = 0) -> Set[str]:
+    tickers = set(gt.get_tickers(NYSE=nyse, NASDAQ=nasdaq, AMEX=amex))
+    if min_market_cap:
+        tickers_filtered = set(gt.get_tickers_filtered(mktcap_min=min_market_cap))
+        tickers = tickers.intersection(tickers_filtered)
+    return tickers

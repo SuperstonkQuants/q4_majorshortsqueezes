@@ -1,4 +1,5 @@
 import functools
+import logging
 from typing import Any, Callable, Generic, List, TypeVar
 
 from q4_majorshortsqueezes.ticker import TickerHistory
@@ -118,8 +119,12 @@ def multiply_price_within_x_days(ticker_history: TickerHistory, multiplier: int,
         cache_highs.add(high)
 
         if cache_lows.get_first() * multiplier <= cache_highs.get_first():
+            logging.info("Satisfied filter: %s(multiplier=%s, days=%s)",
+                         multiply_price_within_x_days.__name__, multiplier, days)
             return True
 
+    logging.info("Failed filter: %s(multiplier=%s, days=%s)",
+                 multiply_price_within_x_days.__name__, multiplier, days)
     return False
 
 
