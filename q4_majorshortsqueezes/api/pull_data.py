@@ -39,21 +39,25 @@ def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str
     for criterion in import_criterion_functions(criterion_paths):
         container.add_criterion(criterion)
 
-    for ticker in sorted(tickers):
-        ticker_history = None
+    for i, ticker in enumerate(sorted(tickers), start=1):
+        try:
+            ticker_history = None
 
-        if csv_dir_path:
-            ticker_file_path = os.path.join(csv_dir_path, f"{ticker}.csv")
-            if os.path.isfile(ticker_file_path):
-                logging.info("Reading `%s` from %s", ticker, ticker_file_path)
-                ticker_history = load_ticker_history_from_csv(ticker_file_path)
+            if csv_dir_path:
+                ticker_file_path = os.path.join(csv_dir_path, f"{ticker}.csv")
+                if os.path.isfile(ticker_file_path):
+                    logging.info("%s. Reading `%s` from %s", i, ticker, ticker_file_path)
+                    ticker_history = load_ticker_history_from_csv(ticker_file_path)
 
-        if ticker_history is None:
-            logging.info("Downloading: `%s`", ticker)
-            ticker_history = load_ticker_history(ticker, start_date)
+            if ticker_history is None:
+                logging.info("%s. Downloading: `%s`", i, ticker)
+                ticker_history = load_ticker_history(ticker, start_date)
 
-        logging.info("Got ticker data. Start filtering of: `%s`", ticker)
-        container.store_ticker(ticker, ticker_history)
+            logging.info("%s. Got ticker data. Start filtering of: `%s`", i,  ticker)
+            container.store_ticker(ticker, ticker_history)
+        except Exception:
+            # Swallow all errors and let users check the logs to see what has failed
+            logging.exception("%s. Ticker `%s` failed.", i, ticker)
 
     return container.get_stored_tickers()
 
