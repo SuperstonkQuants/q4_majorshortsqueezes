@@ -108,16 +108,11 @@ def main():
     filtered_tickers = pull_data.main(tickers=tickers,
                                       start_date=args.start_date,
                                       criterion_paths=args.filters,
-                                      csv_dir_path=args.ticker_source_dir)
+                                      csv_dir_path=args.ticker_source_dir,
+                                      csv_output_dir_path=args.output_path)
     logging.info("Finished pulling and filtering tickers.")
     logging.info(f"The following tickers satisfied all filters: `%s`",
-                 ", ".join(filtered_tickers.keys()))
-    # Store results
-    logging.info("Storing their historical price data now under: `%s`", args.output_path)
-    for ticker, ticker_history in filtered_tickers.items():
-        file_path = os.path.join(args.output_path, f"{ticker}.csv")
-        with open(file_path, mode="w") as fd:
-            ticker_history.to_csv(fd)
+                 ", ".join(filtered_tickers.get_tickers()))
 
 
 if __name__ == "__main__":

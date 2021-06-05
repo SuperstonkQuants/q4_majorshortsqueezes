@@ -131,6 +131,6 @@ def multiply_price_within_x_days(ticker_history: TickerHistory, multiplier: int,
 """
 The following filter implements the requested short squeeze filter:
 `definition of a major short squeeze is when a stock doubles in price (or more) within one week`.
-This function is compliant with the criterion interface of `ticker.TickerContainer.`
+This function is compliant with the criterion interface of `ticker.InMemoryTickerContainer.`
 """
 double_price_within_a_week = functools.partial(multiply_price_within_x_days, multiplier=2, days=5)
