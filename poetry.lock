@@ -45,6 +45,18 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "get-all-tickers"
+version = "1.7"
+description = "get a Python list or download all publicly traded tickers"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pandas = "*"
+requests = "*"
+
+[[package]]
 name = "idna"
 version = "2.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -249,7 +261,7 @@ requests = ">=2.20"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "8e7b72b87c32dae58ad0adfcefead829b3643288c49cc3b4892fb4d6e5b2975d"
+content-hash = "5ef653bcceb3a1a952bc72896eca392bcfb474d9f2a8e5d379bc633c3a601020"
 
 [metadata.files]
 atomicwrites = [
@@ -271,6 +283,9 @@ chardet = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+]
+get-all-tickers = [
+    {file = "get_all_tickers-1.7.tar.gz", hash = "sha256:738884eb094462d0ca26efcbb79f6f39c7f0f3e033247b6d0bf258ea5a665a26"},
 ]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},

@@ -8,6 +8,7 @@ license = "MIT license"
 [tool.poetry.dependencies]
 python = "^3.9"
 yfinance = "^0.1.59"
+get-all-tickers = "^1.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
