@@ -35,7 +35,7 @@ def create_arg_parser():
                         help="Pull all nasdaq tickers.")
     parser.add_argument("--amex", action="store_true",
                         help="Pull all amex tickers.")
-    parser.add_argument("--min-market-cap",
+    parser.add_argument("--min-market-cap", default="0",
                         help="Minimum market cap of tickers (in million USD). "
                              "This does not apply to tickers set with `--tickers`.")
     parser.add_argument("--ticker-source-dir", type=dir_path, default=None,
@@ -76,16 +76,16 @@ def determine_tickers(args: argparse.Namespace) -> Set[str]:
                                                                 amex=args.amex,
                                                                 min_market_cap=int(args.min_market_cap))
         logging.info("Retrieved %s ticker symbols.", len(tickers))
-        logging.debug("Retrieved ticker symbols: %s", ", ".join(tickers))
+        logging.debug("Retrieved ticker symbols: %s", ", ".join(sorted(tickers)))
     else:
         if args.min_market_cap:
             logging.warning("Option `--min-market-cap` has no effect. "
-                            "Need to set at lesat one of the following options: "
+                            "Need to set at least one of the following options: "
                             "`--nyse`, `--nasdaq`, `--amex`")
 
     tickers = tickers.union(set(args.tickers))
     logging.info("%s tickers to process.", len(tickers))
-    logging.debug("List of tickers to process: %s", ", ".join(tickers))
+    logging.debug("List of tickers to process: %s", ", ".join(sorted(tickers)))
     return tickers
 
 
