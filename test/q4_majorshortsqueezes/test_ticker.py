@@ -7,8 +7,9 @@ from q4_majorshortsqueezes.ticker import (
     FileBackedTicketContainer,
     load_ticker_history,
     load_ticker_history_from_csv,
-    retrieve_tickers_with_get_all_tickers_package,
     InMemoryTickerContainer,
+    retrieve_tickers_with_get_all_tickers_package,
+    store_ticker_to_csv,
     Ticker,
     TickerHistory,
 )
@@ -63,12 +64,8 @@ class TestFileBackedTicketContainer:
         assert len(new_container.get_data()[ticker]) == len(sample_data_container.get_data()[ticker])
 
 
-@pytest.mark.integration_test
-def test_load_ticker_history():
-    ticker_history = load_ticker_history("GME", "2021-05-01")
-
-    # Let's check that there is data
-    assert len(ticker_history) > 10
+def assert_ticker_history_data_frame_layout(ticker_history: TickerHistory):
+    assert ticker_history.index.name == "Date"
 
     column_names = list(ticker_history)
     assert column_names[0] == "Open"
@@ -82,6 +79,16 @@ def test_load_ticker_history():
     assert column_names[8] == "OC_Low"
 
 
+@pytest.mark.integration_test
+def test_load_ticker_history():
+    ticker_history = load_ticker_history("GME", "2021-02-01")
+
+    # Let's check that there is data
+    assert len(ticker_history) > 10
+
+    assert_ticker_history_data_frame_layout(ticker_history)
+
+
 def test_load_ticker_history_from_csv(ticker_sample_data_dir):
     gme_csv = os.path.join(ticker_sample_data_dir, "GME.csv")
     ticker_history = load_ticker_history_from_csv(gme_csv)
@@ -89,24 +96,14 @@ def test_load_ticker_history_from_csv(ticker_sample_data_dir):
     # Let's check that there is data
     assert len(ticker_history) > 10
 
-    column_names = list(ticker_history)
-    assert column_names[0] == "Date"  # An own column instead of having tuples in each data series
-    assert column_names[1] == "Open"
-    assert column_names[2] == "High"
-    assert column_names[3] == "Low"
-    assert column_names[4] == "Close"
-    assert column_names[5] == "Adj Close"
-    assert column_names[6] == "Volume"
-    assert column_names[7] == "date_id"
-    assert column_names[8] == "OC_High"
-    assert column_names[9] == "OC_Low"
+    assert_ticker_history_data_frame_layout(ticker_history)
 
 
 @pytest.mark.integration_test
-@pytest.mark.xfail(strict=True)
-def test_load_ticker_history_equality(ticker_sample_data_dir):
+def test_load_ticker_history_equality(tmpdir):
+    gme_csv = os.path.join(tmpdir, "GNE.csv")
     ticker_history_downloaded = load_ticker_history("GME", "2020-01-01")
-    gme_csv = os.path.join(ticker_sample_data_dir, "GME.csv")
+    store_ticker_to_csv(ticker_history_downloaded, gme_csv)
     ticker_history_csv = load_ticker_history_from_csv(gme_csv)
 
     assert ticker_history_downloaded.equals(ticker_history_csv)

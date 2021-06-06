@@ -1,18 +1,19 @@
 import abc
 import glob
+import io
 import os
 import pandas as pd
 import yfinance as yf
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set, Union
 
 from q4_majorshortsqueezes import get_tickers_fixed as gt
 
 
 """
 A Panda's data frame with columns:
-Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low
+Date, Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low
 """
 TickerHistory = pd.DataFrame
 
@@ -94,7 +95,7 @@ class FileBackedTicketContainer(TickerContainer):
 
     def _add_ticker_data(self, ticker: str, ticker_history: TickerHistory):
         with open(self._ticker_data_path(ticker), mode="w") as fd:
-            ticker_history.to_csv(fd)
+            store_ticker_to_csv(ticker_history, fd)
 
     def _ticker_data_path(self, ticker):
         return os.path.join(self.ticker_data_dir_path, f"{ticker}.csv")
@@ -127,7 +128,7 @@ def load_ticker_history(ticker: str, start_date: Optional[str]) -> TickerHistory
                     If `None` is given the max date range will be used.
 
     Returns:
-        A Panda's data frame with columns Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low.
+        A Panda's data frame representing the price history of a ticker.
     """
     df_data = yf.download(ticker, start=start_date, progress=False)
 
@@ -139,25 +140,45 @@ def load_ticker_history(ticker: str, start_date: Optional[str]) -> TickerHistory
     df_data["OC_High"] = df_data[["Open", "Close"]].max(axis=1)
     df_data["OC_Low"] = df_data[["Open", "Close"]].min(axis=1)
 
-    return df_data
+    # We need to be consistent with the Panda frames we load when from csv files.
+    # To ensure that we are fully compatible with the frame layouts and to avoid
+    # float precision errors we use this workaround:
+    temp = io.StringIO()
+    store_ticker_to_csv(df_data, temp)
+    temp.seek(0)
+
+    return load_ticker_history_from_csv(temp)
 
 
-def load_ticker_history_from_csv(file_path: str) -> TickerHistory:
+def load_ticker_history_from_csv(file_path: Union[str, io.StringIO]) -> TickerHistory:
     """Load a tickers historical price data from the given csv.
-
-    Attention:
-    The loaded dataframes are not fully identical with the ones downloaded.
-    When loaded from csv a new column `date` exists which is stored in the data series as
-    tuples when loading the data from `yfinance`.
 
     Args:
         file_path: The path to the comma-separated csv file that contains the historical price data.
 
     Returns:
-        A Panda's data frame with columns Date, Open, High, Low, Close, Adj Close, Volume, date_id, OC-High, OC-Low.
+        A Panda's data frame representing the price history of a ticker.
     """
-    # TODO: Make the format identical with `yfinance` loading
-    return pd.read_csv(file_path)
+    return pd.read_csv(file_path, index_col="Date")
+
+
+def store_ticker_to_csv(ticker_history: TickerHistory, file_path: Union[str, io.StringIO]):
+    """Store a ticker's historical price information in a csv file.
+
+    We should always use this function to store ticker history data since it
+    ensures that we use a unified frame layout and float precision.
+    Otherwise, ticker histories might originate from the data, but still end uo
+    unequal.
+    This function serializes the floats with 6 digits after the decimal point.
+
+    Args:
+        ticker_history: The price history of a ticker.
+        file_path: The csv file path to write the data to.
+
+    Returns:
+
+    """
+    ticker_history.to_csv(file_path, index=True, float_format="%.6f")
 
 
 def retrieve_tickers_with_get_all_tickers_package(nyse: bool = False,
