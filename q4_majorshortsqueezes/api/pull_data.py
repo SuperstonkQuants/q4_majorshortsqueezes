@@ -65,7 +65,7 @@ def main(tickers: Set[str], start_date: Optional[str], criterion_paths: List[str
 
             logging.info("%s. Got ticker data. Start filtering of: `%s`", i,  ticker)
             container.store_ticker(ticker, ticker_history)
-        except Exception:
+        except ValueError:
             # Swallow all errors and let users check the logs to see what has failed
             logging.exception("%s. Ticker `%s` failed.", i, ticker)
 

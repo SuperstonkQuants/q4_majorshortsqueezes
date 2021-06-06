@@ -6,9 +6,7 @@ from q4_majorshortsqueezes.ticker import FileBackedTicketContainer
 
 
 @pytest.mark.integration_test
-@pytest.mark.xfail
 def test_main_download_data():
-    # TODO: Fix me ASAP; The standard filter is incompatible with downloaded data/ panda frames
     result = main(tickers={"GME", "AMC", "TSLA"},
                   start_date="2020-01-01",
                   criterion_paths=["q4_majorshortsqueezes.filter/price_multi_2_within_5_days"])

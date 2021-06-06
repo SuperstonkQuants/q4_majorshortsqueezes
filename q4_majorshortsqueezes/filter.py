@@ -113,7 +113,7 @@ def multiply_price_within_x_days(ticker: Ticker,
     """
     cache_adj_close = SortedFIFOCache(size=days, sort_key_func=lambda x: x)
 
-    for adj_close, date in zip(ticker.history['Adj Close'], ticker.history['Date']):
+    for adj_close, date in zip(ticker.history['Adj Close'], ticker.history.index):
         # At first there are no values cached:
         if cache_adj_close.get_first():
             increase = adj_close / cache_adj_close.get_first()
